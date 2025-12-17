@@ -1,0 +1,269 @@
+import React, { useState, useEffect } from 'react';
+import { Zap, Ban, RotateCcw, CheckCircle, XCircle, Trophy, Lightbulb } from 'lucide-react';
+
+// --- Data based on Lesson Plan ---
+// LP Classification:
+// Conductors: water, iron, copper, steel, gold, silver.
+// Insulators: plastic, rubber, paper, wood, cotton, glass.
+
+const gameData = [
+  { id: 1, name: "Rubber", type: "insulator", emoji: "👟", color: "bg-orange-100", reason: "It stops electricity." },
+  { id: 2, name: "Copper", type: "conductor", emoji: "🟫", color: "bg-orange-200", reason: "It lets electricity pass through." },
+  { id: 3, name: "Paper", type: "insulator", emoji: "📄", color: "bg-white", reason: "It does not let electricity pass." },
+  { id: 4, name: "Steel", type: "conductor", emoji: "🥄", color: "bg-gray-300", reason: "It is a metal that carries electricity." },
+  { id: 5, name: "Plastic", type: "insulator", emoji: "🥤", color: "bg-red-100", reason: "It blocks electricity." },
+  { id: 6, name: "Water", type: "conductor", emoji: "💧", color: "bg-blue-100", reason: "It lets electricity pass through." },
+  { id: 7, name: "Cotton", type: "insulator", emoji: "👕", color: "bg-purple-100", reason: "It is a fabric, not a metal." },
+  { id: 8, name: "Iron", type: "conductor", emoji: "🔩", color: "bg-gray-400", reason: "It is a strong metal." },
+  { id: 9, name: "Glass", type: "insulator", emoji: "🥛", color: "bg-blue-50", reason: "It stops electricity." },
+  { id: 10, name: "Gold", type: "conductor", emoji: "🥇", color: "bg-yellow-200", reason: "It is a very good conductor." },
+  { id: 11, name: "Silver", type: "conductor", emoji: "🥈", color: "bg-gray-200", reason: "It lets electricity pass easily." },
+  { id: 12, name: "Wood", type: "insulator", emoji: "🪵", color: "bg-amber-700", reason: "It does not let electricity pass." },
+];
+
+const FingerIcon = ({ count }) => (
+  <div className="flex gap-1 items-center justify-center bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+    <span className="text-2xl">🖐️</span>
+    <span className="font-bold text-white text-lg">
+      {count === 1 ? "1 Finger" : "2 Fingers"}
+    </span>
+  </div>
+);
+
+export default function ElectricGame() {
+  const [gameState, setGameState] = useState('start'); // start, playing, feedback, end
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [score, setScore] = useState(0);
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [animating, setAnimating] = useState(false);
+
+  // --- Audio / Sound Effects placeholders (visual only) ---
+  
+  const startGame = () => {
+    setGameState('playing');
+    setCurrentIdx(0);
+    setScore(0);
+  };
+
+  const handleAnswer = (selectedType) => {
+    if (animating) return;
+    
+    const currentItem = gameData[currentIdx];
+    const correct = currentItem.type === selectedType;
+    
+    setIsCorrect(correct);
+    if (correct) setScore(s => s + 1);
+    
+    setAnimating(true);
+    
+    // Simulate "processing" time then show feedback
+    setTimeout(() => {
+      setGameState('feedback');
+      setAnimating(false);
+    }, 600);
+  };
+
+  const nextQuestion = () => {
+    if (currentIdx < gameData.length - 1) {
+      setCurrentIdx(c => c + 1);
+      setGameState('playing');
+    } else {
+      setGameState('end');
+    }
+  };
+
+  // --- Components ---
+
+  const StartScreen = () => (
+    <div className="flex flex-col items-center justify-center h-full p-6 text-center space-y-8 animate-in fade-in zoom-in duration-500">
+      <div className="bg-yellow-400 p-6 rounded-full shadow-lg shadow-yellow-200">
+        <Zap size={64} className="text-white" fill="white" />
+      </div>
+      
+      <div className="space-y-2">
+        <h1 className="text-4xl font-extrabold text-slate-800">Electric Challenge</h1>
+        <p className="text-lg text-slate-600 font-medium">Warm-up & Task 1 Activity</p>
+      </div>
+
+      <div className="bg-white p-6 rounded-xl shadow-md border-2 border-slate-100 max-w-sm w-full">
+        <h3 className="font-bold text-slate-700 mb-3 text-lg">How to play:</h3>
+        <ul className="text-left space-y-3 text-slate-600">
+          <li className="flex items-center gap-3">
+            <span className="bg-green-100 text-green-700 p-2 rounded-lg font-bold">1</span>
+            <span>Look at the object.</span>
+          </li>
+          <li className="flex items-center gap-3">
+            <span className="bg-blue-100 text-blue-700 p-2 rounded-lg font-bold">2</span>
+            <span>Is it a <b>Conductor</b> or <b>Insulator</b>?</span>
+          </li>
+          <li className="flex items-center gap-3">
+            <span className="bg-purple-100 text-purple-700 p-2 rounded-lg font-bold">3</span>
+            <span>Click the button to check!</span>
+          </li>
+        </ul>
+      </div>
+
+      <button 
+        onClick={startGame}
+        className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-full text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all active:scale-95"
+      >
+        Start Game
+        <span className="absolute inset-0 rounded-full bg-white/20 group-hover:animate-ping opacity-0 group-hover:opacity-100 transition-opacity"></span>
+      </button>
+    </div>
+  );
+
+  const PlayingScreen = () => {
+    const item = gameData[currentIdx];
+    return (
+      <div className="flex flex-col h-full max-w-lg mx-auto w-full p-4">
+        {/* Header Progress */}
+        <div className="flex justify-between items-center mb-6">
+          <span className="text-sm font-bold text-slate-400">Item {currentIdx + 1} / {gameData.length}</span>
+          <div className="bg-slate-100 px-3 py-1 rounded-full text-slate-600 font-bold flex items-center gap-2">
+            <Trophy size={16} className="text-yellow-500" />
+            {score}
+          </div>
+        </div>
+
+        {/* Card */}
+        <div className={`flex-1 flex flex-col items-center justify-center bg-white rounded-3xl shadow-xl border-4 border-slate-100 p-8 mb-8 transition-all ${animating ? 'scale-95 opacity-80' : 'scale-100 opacity-100'}`}>
+          <div className={`text-9xl mb-6 p-6 rounded-full ${item.color} shadow-inner`}>
+            {item.emoji}
+          </div>
+          <h2 className="text-4xl font-black text-slate-800 tracking-tight">{item.name}</h2>
+          <p className="text-slate-400 mt-2 font-medium">Does it let electricity pass?</p>
+        </div>
+
+        {/* Buttons */}
+        <div className="grid grid-cols-2 gap-4">
+          <button 
+            onClick={() => handleAnswer('conductor')}
+            className="flex flex-col items-center justify-center p-6 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white rounded-2xl shadow-lg shadow-green-200 transition-all hover:-translate-y-1"
+          >
+            <Zap size={32} className="mb-2" fill="currentColor" />
+            <span className="font-bold text-xl">Conductor</span>
+            <span className="text-xs opacity-75 mt-1">(1 Finger)</span>
+          </button>
+
+          <button 
+            onClick={() => handleAnswer('insulator')}
+            className="flex flex-col items-center justify-center p-6 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-2xl shadow-lg shadow-red-200 transition-all hover:-translate-y-1"
+          >
+            <Ban size={32} className="mb-2" />
+            <span className="font-bold text-xl">Insulator</span>
+            <span className="text-xs opacity-75 mt-1">(2 Fingers)</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const FeedbackScreen = () => {
+    const item = gameData[currentIdx];
+    return (
+      <div className={`flex flex-col h-full items-center justify-center p-6 text-center ${isCorrect ? 'bg-green-50' : 'bg-red-50'}`}>
+        <div className={`p-6 rounded-full mb-6 ${isCorrect ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'} animate-bounce`}>
+          {isCorrect ? <CheckCircle size={64} /> : <XCircle size={64} />}
+        </div>
+
+        <h2 className={`text-3xl font-black mb-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+          {isCorrect ? "Correct!" : "Oops!"}
+        </h2>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-w-xs w-full mb-8">
+            <p className="text-xl text-slate-800 font-bold mb-2">
+                {item.name} is {item.type === 'conductor' ? 'a' : 'an'} <span className={item.type === 'conductor' ? 'text-green-600' : 'text-red-600'}>{item.type}</span>.
+            </p>
+            <p className="text-slate-500 italic">"{item.reason}"</p>
+        </div>
+        
+        {/* Visual reinforcement of the Finger Rule from LP */}
+        <div className="mb-8 transform hover:scale-105 transition-transform">
+            <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-xl shadow-md ${item.type === 'conductor' ? 'bg-green-500' : 'bg-red-500'}`}>
+                <FingerIcon count={item.type === 'conductor' ? 1 : 2} />
+            </div>
+        </div>
+
+        <button 
+          onClick={nextQuestion}
+          className="px-8 py-3 bg-slate-800 text-white font-bold rounded-xl shadow-lg hover:bg-slate-900 transition-colors flex items-center gap-2"
+        >
+          Next Item <Zap size={18} />
+        </button>
+      </div>
+    );
+  };
+
+  const EndScreen = () => {
+    const conductors = gameData.filter(i => i.type === 'conductor');
+    const insulators = gameData.filter(i => i.type === 'insulator');
+
+    return (
+      <div className="flex flex-col h-full p-4 overflow-y-auto bg-slate-50">
+        <div className="text-center mb-6 pt-4">
+          <h1 className="text-3xl font-black text-slate-800 mb-2">Task 1 Complete!</h1>
+          <p className="text-slate-600">You scored {score} out of {gameData.length}</p>
+        </div>
+
+        {/* Grouping Display (Task 1 Goal) */}
+        <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto w-full mb-8">
+            {/* Conductors List */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-green-500">
+                <div className="flex items-center gap-2 mb-4">
+                    <Zap className="text-green-500" />
+                    <h3 className="text-xl font-bold text-slate-800">Conductors</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                    {conductors.map(item => (
+                        <div key={item.id} className="flex items-center gap-2 text-sm bg-green-50 p-2 rounded-lg text-slate-700">
+                            <span>{item.emoji}</span> {item.name}
+                        </div>
+                    ))}
+                </div>
+                <p className="mt-3 text-xs text-center text-slate-400 font-medium">Allow electricity to pass</p>
+            </div>
+
+            {/* Insulators List */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-red-500">
+                <div className="flex items-center gap-2 mb-4">
+                    <Ban className="text-red-500" />
+                    <h3 className="text-xl font-bold text-slate-800">Insulators</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                    {insulators.map(item => (
+                        <div key={item.id} className="flex items-center gap-2 text-sm bg-red-50 p-2 rounded-lg text-slate-700">
+                            <span>{item.emoji}</span> {item.name}
+                        </div>
+                    ))}
+                </div>
+                <p className="mt-3 text-xs text-center text-slate-400 font-medium">Stop electricity</p>
+            </div>
+        </div>
+
+        <div className="flex justify-center pb-8">
+            <button 
+                onClick={startGame}
+                className="px-6 py-3 bg-white border-2 border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-2"
+            >
+                <RotateCcw size={18} /> Play Again
+            </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="w-full h-screen bg-slate-100 flex items-center justify-center font-sans">
+        <div className="w-full max-w-2xl h-full md:h-[800px] bg-white md:rounded-3xl shadow-2xl overflow-hidden relative">
+            {/* Decorative BG pattern */}
+            <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366f1 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+            
+            {gameState === 'start' && <StartScreen />}
+            {gameState === 'playing' && <PlayingScreen />}
+            {gameState === 'feedback' && <FeedbackScreen />}
+            {gameState === 'end' && <EndScreen />}
+        </div>
+    </div>
+  );
+}
