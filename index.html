@@ -1,269 +1,598 @@
-import React, { useState, useEffect } from 'react';
-import { Zap, Ban, RotateCcw, CheckCircle, XCircle, Trophy, Lightbulb } from 'lucide-react';
-
-// --- Data based on Lesson Plan ---
-// LP Classification:
-// Conductors: water, iron, copper, steel, gold, silver.
-// Insulators: plastic, rubber, paper, wood, cotton, glass.
-
-const gameData = [
-  { id: 1, name: "Rubber", type: "insulator", emoji: "👟", color: "bg-orange-100", reason: "It stops electricity." },
-  { id: 2, name: "Copper", type: "conductor", emoji: "🟫", color: "bg-orange-200", reason: "It lets electricity pass through." },
-  { id: 3, name: "Paper", type: "insulator", emoji: "📄", color: "bg-white", reason: "It does not let electricity pass." },
-  { id: 4, name: "Steel", type: "conductor", emoji: "🥄", color: "bg-gray-300", reason: "It is a metal that carries electricity." },
-  { id: 5, name: "Plastic", type: "insulator", emoji: "🥤", color: "bg-red-100", reason: "It blocks electricity." },
-  { id: 6, name: "Water", type: "conductor", emoji: "💧", color: "bg-blue-100", reason: "It lets electricity pass through." },
-  { id: 7, name: "Cotton", type: "insulator", emoji: "👕", color: "bg-purple-100", reason: "It is a fabric, not a metal." },
-  { id: 8, name: "Iron", type: "conductor", emoji: "🔩", color: "bg-gray-400", reason: "It is a strong metal." },
-  { id: 9, name: "Glass", type: "insulator", emoji: "🥛", color: "bg-blue-50", reason: "It stops electricity." },
-  { id: 10, name: "Gold", type: "conductor", emoji: "🥇", color: "bg-yellow-200", reason: "It is a very good conductor." },
-  { id: 11, name: "Silver", type: "conductor", emoji: "🥈", color: "bg-gray-200", reason: "It lets electricity pass easily." },
-  { id: 12, name: "Wood", type: "insulator", emoji: "🪵", color: "bg-amber-700", reason: "It does not let electricity pass." },
-];
-
-const FingerIcon = ({ count }) => (
-  <div className="flex gap-1 items-center justify-center bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-    <span className="text-2xl">🖐️</span>
-    <span className="font-bold text-white text-lg">
-      {count === 1 ? "1 Finger" : "2 Fingers"}
-    </span>
-  </div>
-);
-
-export default function ElectricGame() {
-  const [gameState, setGameState] = useState('start'); // start, playing, feedback, end
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [score, setScore] = useState(0);
-  const [isCorrect, setIsCorrect] = useState(false);
-  const [animating, setAnimating] = useState(false);
-
-  // --- Audio / Sound Effects placeholders (visual only) ---
-  
-  const startGame = () => {
-    setGameState('playing');
-    setCurrentIdx(0);
-    setScore(0);
-  };
-
-  const handleAnswer = (selectedType) => {
-    if (animating) return;
-    
-    const currentItem = gameData[currentIdx];
-    const correct = currentItem.type === selectedType;
-    
-    setIsCorrect(correct);
-    if (correct) setScore(s => s + 1);
-    
-    setAnimating(true);
-    
-    // Simulate "processing" time then show feedback
-    setTimeout(() => {
-      setGameState('feedback');
-      setAnimating(false);
-    }, 600);
-  };
-
-  const nextQuestion = () => {
-    if (currentIdx < gameData.length - 1) {
-      setCurrentIdx(c => c + 1);
-      setGameState('playing');
-    } else {
-      setGameState('end');
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Electric Challenge</title>
+  <style>
+    :root{
+      --bg:#f1f5f9; --card:#ffffff; --text:#0f172a; --muted:#64748b;
+      --green:#16a34a; --green2:#15803d; --red:#ef4444; --red2:#dc2626;
+      --blue:#2563eb; --indigo:#4f46e5; --border:#e2e8f0; --shadow: 0 18px 60px rgba(2,6,23,.14);
     }
-  };
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:12px;
+      overflow-x:hidden;
+      user-select:none;
+    }
+    .frame{
+      width:100%;
+      max-width: 760px;
+      background: var(--card);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+      min-height: 680px;
+    }
+    .pattern{
+      position:absolute; inset:0;
+      opacity:.06; pointer-events:none;
+      background-image: radial-gradient(#6366f1 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    .screen{
+      position:relative;
+      padding: 22px;
+      min-height: 680px;
+      display:flex;
+      flex-direction:column;
+    }
+    .center{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      gap:18px;
+      padding: 10px 6px;
+    }
+    .title{
+      font-weight: 900;
+      letter-spacing:-.02em;
+      font-size: clamp(28px, 4vw, 44px);
+    }
+    .subtitle{
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      font-weight: 800;
+      color: #334155;
+    }
+    .card{
+      width:100%;
+      max-width: 520px;
+      background:#fff;
+      border: 2px solid #f1f5f9;
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(2,6,23,.06);
+    }
+    .howto{
+      text-align:left;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top: 6px;
+      color:#475569;
+      font-weight:600;
+    }
+    .step{
+      display:flex; gap:10px; align-items:center;
+    }
+    .num{
+      width:34px; height:34px;
+      border-radius: 10px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:900;
+    }
+    .num.g{background:#dcfce7;color:#166534}
+    .num.b{background:#dbeafe;color:#1d4ed8}
+    .num.p{background:#ede9fe;color:#5b21b6}
 
-  // --- Components ---
+    .btn{
+      border:0;
+      border-radius: 999px;
+      padding: 14px 22px;
+      font-weight: 900;
+      font-size: 18px;
+      cursor:pointer;
+      transition: transform .08s ease, filter .15s ease;
+    }
+    .btn:active{ transform: scale(.98); }
+    .btn.primary{
+      color:#fff;
+      background: linear-gradient(90deg, var(--blue), var(--indigo));
+      box-shadow: 0 16px 30px rgba(37,99,235,.25);
+    }
 
-  const StartScreen = () => (
-    <div className="flex flex-col items-center justify-center h-full p-6 text-center space-y-8 animate-in fade-in zoom-in duration-500">
-      <div className="bg-yellow-400 p-6 rounded-full shadow-lg shadow-yellow-200">
-        <Zap size={64} className="text-white" fill="white" />
-      </div>
-      
-      <div className="space-y-2">
-        <h1 className="text-4xl font-extrabold text-slate-800">Electric Challenge</h1>
-        <p className="text-lg text-slate-600 font-medium">Warm-up & Task 1 Activity</p>
-      </div>
+    /* Playing layout */
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom: 14px;
+    }
+    .small{
+      color:#94a3b8;
+      font-weight:900;
+      font-size: 12px;
+      letter-spacing:.02em;
+    }
+    .score{
+      display:inline-flex; align-items:center; gap:8px;
+      background:#f1f5f9;
+      border:1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight:900;
+      color:#334155;
+    }
 
-      <div className="bg-white p-6 rounded-xl shadow-md border-2 border-slate-100 max-w-sm w-full">
-        <h3 className="font-bold text-slate-700 mb-3 text-lg">How to play:</h3>
-        <ul className="text-left space-y-3 text-slate-600">
-          <li className="flex items-center gap-3">
-            <span className="bg-green-100 text-green-700 p-2 rounded-lg font-bold">1</span>
-            <span>Look at the object.</span>
-          </li>
-          <li className="flex items-center gap-3">
-            <span className="bg-blue-100 text-blue-700 p-2 rounded-lg font-bold">2</span>
-            <span>Is it a <b>Conductor</b> or <b>Insulator</b>?</span>
-          </li>
-          <li className="flex items-center gap-3">
-            <span className="bg-purple-100 text-purple-700 p-2 rounded-lg font-bold">3</span>
-            <span>Click the button to check!</span>
-          </li>
-        </ul>
-      </div>
+    .bigcard{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      background:#fff;
+      border-radius: 26px;
+      border: 4px solid #f1f5f9;
+      box-shadow: 0 18px 40px rgba(2,6,23,.08);
+      padding: 26px 18px;
+      margin: 10px 0 18px;
+      transition: transform .12s ease, opacity .12s ease;
+    }
+    .bigcard.animating{
+      transform: scale(.985);
+      opacity: .85;
+    }
+    .emoji{
+      font-size: 92px;
+      width: 150px;
+      height: 150px;
+      border-radius: 999px;
+      display:flex; align-items:center; justify-content:center;
+      margin-bottom: 14px;
+      box-shadow: inset 0 0 0 10px rgba(2,6,23,.03);
+    }
+    .name{
+      font-size: clamp(28px, 3.2vw, 40px);
+      font-weight: 950;
+      letter-spacing: -.02em;
+    }
+    .hint{
+      margin-top: 6px;
+      color:#94a3b8;
+      font-weight:700;
+    }
 
-      <button 
-        onClick={startGame}
-        className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-full text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all active:scale-95"
-      >
-        Start Game
-        <span className="absolute inset-0 rounded-full bg-white/20 group-hover:animate-ping opacity-0 group-hover:opacity-100 transition-opacity"></span>
-      </button>
-    </div>
-  );
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .choice{
+      border:0;
+      border-radius: 18px;
+      padding: 18px 14px;
+      cursor:pointer;
+      color:#fff;
+      font-weight: 950;
+      box-shadow: 0 14px 28px rgba(2,6,23,.10);
+      transition: transform .1s ease, filter .15s ease;
+    }
+    .choice:hover{ filter: brightness(1.02); transform: translateY(-1px); }
+    .choice:active{ transform: translateY(0px) scale(.99); }
+    .choice .label{ font-size: 20px; display:block; margin-top: 6px; }
+    .choice .sub{ font-size: 12px; opacity:.85; margin-top: 4px; display:block; font-weight:800;}
+    .choice.green{ background: var(--green); }
+    .choice.green:hover{ background: var(--green2); }
+    .choice.red{ background: var(--red); }
+    .choice.red:hover{ background: var(--red2); }
 
-  const PlayingScreen = () => {
-    const item = gameData[currentIdx];
-    return (
-      <div className="flex flex-col h-full max-w-lg mx-auto w-full p-4">
-        {/* Header Progress */}
-        <div className="flex justify-between items-center mb-6">
-          <span className="text-sm font-bold text-slate-400">Item {currentIdx + 1} / {gameData.length}</span>
-          <div className="bg-slate-100 px-3 py-1 rounded-full text-slate-600 font-bold flex items-center gap-2">
-            <Trophy size={16} className="text-yellow-500" />
-            {score}
+    /* Feedback */
+    .feedback{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap: 14px;
+      text-align:center;
+      padding: 8px;
+    }
+    .badge{
+      width: 110px; height: 110px;
+      border-radius: 999px;
+      display:flex; align-items:center; justify-content:center;
+      font-size: 54px;
+      animation: bounce 1s infinite;
+    }
+    @keyframes bounce{
+      0%,100%{ transform: translateY(0); }
+      50%{ transform: translateY(-8px); }
+    }
+    .okbg{ background:#dcfce7; color:#166534; }
+    .nobg{ background:#fee2e2; color:#991b1b; }
+
+    .explain{
+      width:100%;
+      max-width: 420px;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 10px 24px rgba(2,6,23,.06);
+    }
+    .explain .line1{
+      font-weight: 950;
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+    .explain .quote{
+      color:#64748b;
+      font-style: italic;
+      font-weight: 650;
+    }
+    .finger{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 14px;
+      border-radius: 16px;
+      color:#fff;
+      font-weight: 950;
+      box-shadow: 0 14px 26px rgba(2,6,23,.12);
+    }
+    .finger .hand{ font-size: 26px; }
+    .finger .txt{ font-size: 16px; }
+    .nextbtn{
+      border:0;
+      border-radius: 14px;
+      padding: 12px 18px;
+      cursor:pointer;
+      font-weight: 950;
+      color:#fff;
+      background:#0f172a;
+      box-shadow: 0 14px 24px rgba(2,6,23,.18);
+    }
+    .nextbtn:hover{ filter: brightness(1.05); }
+
+    /* End screen lists */
+    .endwrap{
+      flex:1;
+      overflow:auto;
+      padding-bottom: 16px;
+    }
+    .endhead{
+      text-align:center;
+      padding: 8px 0 12px;
+    }
+    .endhead .h{
+      font-size: 28px;
+      font-weight: 950;
+      margin-bottom: 6px;
+    }
+    .endhead .p{
+      color: var(--muted);
+      font-weight: 750;
+    }
+    .twoCols{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      max-width: 920px;
+      margin: 0 auto;
+    }
+    @media(min-width: 760px){
+      .twoCols{ grid-template-columns: 1fr 1fr; }
+    }
+    .listcard{
+      background:#fff;
+      border-radius: 18px;
+      padding: 16px;
+      border-top: 5px solid transparent;
+      box-shadow: 0 10px 24px rgba(2,6,23,.06);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .listcard.greenTop{ border-top-color: var(--green); }
+    .listcard.redTop{ border-top-color: var(--red); }
+    .listtitle{
+      display:flex; align-items:center; gap:10px;
+      font-weight: 950;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .items{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .chip{
+      display:flex; align-items:center; gap:8px;
+      font-weight: 800;
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-size: 13px;
+      color:#334155;
+      background:#f8fafc;
+      border:1px solid var(--border);
+    }
+    .footnote{
+      margin-top: 10px;
+      color:#94a3b8;
+      font-weight: 800;
+      font-size: 12px;
+      text-align:center;
+    }
+    .again{
+      margin: 12px auto 0;
+      display:flex;
+      justify-content:center;
+    }
+    .again button{
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: #fff;
+      color:#475569;
+      font-weight: 950;
+      padding: 12px 16px;
+      cursor:pointer;
+    }
+    .again button:hover{ background:#f8fafc; }
+  </style>
+</head>
+<body>
+  <div class="frame" role="application" aria-label="Electric Challenge Game">
+    <div class="pattern"></div>
+    <div id="app" class="screen"></div>
+  </div>
+
+  <script>
+    // ---- Data (ported from React code) ----
+    const gameData = [
+      { id: 1, name: "Rubber",  type: "insulator", emoji: "👟", color: "#ffedd5", reason: "It stops electricity." },
+      { id: 2, name: "Copper",  type: "conductor", emoji: "🟫", color: "#fed7aa", reason: "It lets electricity pass through." },
+      { id: 3, name: "Paper",   type: "insulator", emoji: "📄", color: "#ffffff", reason: "It does not let electricity pass." },
+      { id: 4, name: "Steel",   type: "conductor", emoji: "🥄", color: "#d1d5db", reason: "It is a metal that carries electricity." },
+      { id: 5, name: "Plastic", type: "insulator", emoji: "🥤", color: "#fee2e2", reason: "It blocks electricity." },
+      { id: 6, name: "Water",   type: "conductor", emoji: "💧", color: "#dbeafe", reason: "It lets electricity pass through." },
+      { id: 7, name: "Cotton",  type: "insulator", emoji: "👕", color: "#f3e8ff", reason: "It is a fabric, not a metal." },
+      { id: 8, name: "Iron",    type: "conductor", emoji: "🔩", color: "#9ca3af", reason: "It is a strong metal." },
+      { id: 9, name: "Glass",   type: "insulator", emoji: "🥛", color: "#eff6ff", reason: "It stops electricity." },
+      { id: 10,name: "Gold",    type: "conductor", emoji: "🥇", color: "#fef08a", reason: "It is a very good conductor." },
+      { id: 11,name: "Silver",  type: "conductor", emoji: "🥈", color: "#e5e7eb", reason: "It lets electricity pass easily." },
+      { id: 12,name: "Wood",    type: "insulator", emoji: "🪵", color: "#b45309", reason: "It does not let electricity pass." },
+    ];
+
+    // ---- State ----
+    const app = document.getElementById("app");
+
+    const state = {
+      gameState: "start", // start | playing | feedback | end
+      currentIdx: 0,
+      score: 0,
+      isCorrect: false,
+      animating: false,
+    };
+
+    function resetGame() {
+      state.gameState = "playing";
+      state.currentIdx = 0;
+      state.score = 0;
+      state.isCorrect = false;
+      state.animating = false;
+      render();
+    }
+
+    function startGame() {
+      resetGame();
+    }
+
+    function handleAnswer(selectedType) {
+      if (state.animating) return;
+      const item = gameData[state.currentIdx];
+      const correct = item.type === selectedType;
+
+      state.isCorrect = correct;
+      if (correct) state.score += 1;
+
+      state.animating = true;
+      render(); // show animating effect on card
+      setTimeout(() => {
+        state.gameState = "feedback";
+        state.animating = false;
+        render();
+      }, 600);
+    }
+
+    function nextQuestion() {
+      if (state.currentIdx < gameData.length - 1) {
+        state.currentIdx += 1;
+        state.gameState = "playing";
+      } else {
+        state.gameState = "end";
+      }
+      render();
+    }
+
+    // ---- Screens ----
+    function StartScreen() {
+      return `
+        <div class="center">
+          <div style="width:110px;height:110px;border-radius:999px;background:#facc15;display:flex;align-items:center;justify-content:center;box-shadow:0 18px 30px rgba(250,204,21,.35)">
+            <div style="font-size:56px">⚡</div>
           </div>
+
+          <div>
+            <div class="title">Electric Challenge</div>
+            <div class="subtitle">Warm-up & Task 1 Activity</div>
+          </div>
+
+          <div class="card">
+            <div style="font-weight:950;color:#334155;font-size:18px;margin-bottom:10px">How to play:</div>
+            <div class="howto">
+              <div class="step"><div class="num g">1</div><div>Look at the object.</div></div>
+              <div class="step"><div class="num b">2</div><div>Is it a <b>Conductor</b> or <b>Insulator</b>?</div></div>
+              <div class="step"><div class="num p">3</div><div>Click the button to check!</div></div>
+            </div>
+          </div>
+
+          <button class="btn primary" id="btnStart">Start Game</button>
+        </div>
+      `;
+    }
+
+    function PlayingScreen() {
+      const item = gameData[state.currentIdx];
+      const animClass = state.animating ? "animating" : "";
+      return `
+        <div class="topbar">
+          <div class="small">Item ${state.currentIdx + 1} / ${gameData.length}</div>
+          <div class="score">🏆 ${state.score}</div>
         </div>
 
-        {/* Card */}
-        <div className={`flex-1 flex flex-col items-center justify-center bg-white rounded-3xl shadow-xl border-4 border-slate-100 p-8 mb-8 transition-all ${animating ? 'scale-95 opacity-80' : 'scale-100 opacity-100'}`}>
-          <div className={`text-9xl mb-6 p-6 rounded-full ${item.color} shadow-inner`}>
-            {item.emoji}
+        <div class="bigcard ${animClass}">
+          <div class="emoji" style="background:${item.color}; ${item.color==="#b45309" ? "color:#fff" : ""}">
+            ${item.emoji}
           </div>
-          <h2 className="text-4xl font-black text-slate-800 tracking-tight">{item.name}</h2>
-          <p className="text-slate-400 mt-2 font-medium">Does it let electricity pass?</p>
+          <div class="name">${item.name}</div>
+          <div class="hint">Does it let electricity pass?</div>
         </div>
 
-        {/* Buttons */}
-        <div className="grid grid-cols-2 gap-4">
-          <button 
-            onClick={() => handleAnswer('conductor')}
-            className="flex flex-col items-center justify-center p-6 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white rounded-2xl shadow-lg shadow-green-200 transition-all hover:-translate-y-1"
-          >
-            <Zap size={32} className="mb-2" fill="currentColor" />
-            <span className="font-bold text-xl">Conductor</span>
-            <span className="text-xs opacity-75 mt-1">(1 Finger)</span>
+        <div class="grid2">
+          <button class="choice green" id="btnConductor" ${state.animating ? "disabled" : ""}>
+            <span style="font-size:34px">⚡</span>
+            <span class="label">Conductor</span>
+            <span class="sub">(1 Finger)</span>
           </button>
 
-          <button 
-            onClick={() => handleAnswer('insulator')}
-            className="flex flex-col items-center justify-center p-6 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-2xl shadow-lg shadow-red-200 transition-all hover:-translate-y-1"
-          >
-            <Ban size={32} className="mb-2" />
-            <span className="font-bold text-xl">Insulator</span>
-            <span className="text-xs opacity-75 mt-1">(2 Fingers)</span>
+          <button class="choice red" id="btnInsulator" ${state.animating ? "disabled" : ""}>
+            <span style="font-size:34px">⛔</span>
+            <span class="label">Insulator</span>
+            <span class="sub">(2 Fingers)</span>
           </button>
         </div>
-      </div>
-    );
-  };
+      `;
+    }
 
-  const FeedbackScreen = () => {
-    const item = gameData[currentIdx];
-    return (
-      <div className={`flex flex-col h-full items-center justify-center p-6 text-center ${isCorrect ? 'bg-green-50' : 'bg-red-50'}`}>
-        <div className={`p-6 rounded-full mb-6 ${isCorrect ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'} animate-bounce`}>
-          {isCorrect ? <CheckCircle size={64} /> : <XCircle size={64} />}
-        </div>
+    function FeedbackScreen() {
+      const item = gameData[state.currentIdx];
+      const ok = state.isCorrect;
+      const bg = ok ? "#f0fdf4" : "#fef2f2";
+      const badgeClass = ok ? "badge okbg" : "badge nobg";
+      const title = ok ? "Correct!" : "Oops!";
+      const titleColor = ok ? "#15803d" : "#b91c1c";
+      const typeColor = item.type === "conductor" ? "#16a34a" : "#ef4444";
+      const fingerBg = item.type === "conductor" ? "#16a34a" : "#ef4444";
+      const fingerCount = item.type === "conductor" ? 1 : 2;
 
-        <h2 className={`text-3xl font-black mb-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-          {isCorrect ? "Correct!" : "Oops!"}
-        </h2>
+      return `
+        <div class="feedback" style="background:${bg}; border-radius: 18px;">
+          <div class="${badgeClass}">${ok ? "✅" : "❌"}</div>
+          <div style="font-weight:950;font-size:34px;color:${titleColor}">${title}</div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-w-xs w-full mb-8">
-            <p className="text-xl text-slate-800 font-bold mb-2">
-                {item.name} is {item.type === 'conductor' ? 'a' : 'an'} <span className={item.type === 'conductor' ? 'text-green-600' : 'text-red-600'}>{item.type}</span>.
-            </p>
-            <p className="text-slate-500 italic">"{item.reason}"</p>
-        </div>
-        
-        {/* Visual reinforcement of the Finger Rule from LP */}
-        <div className="mb-8 transform hover:scale-105 transition-transform">
-            <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-xl shadow-md ${item.type === 'conductor' ? 'bg-green-500' : 'bg-red-500'}`}>
-                <FingerIcon count={item.type === 'conductor' ? 1 : 2} />
+          <div class="explain">
+            <div class="line1">
+              ${item.name} is ${item.type === "conductor" ? "a" : "an"}
+              <span style="color:${typeColor}">${item.type}</span>.
             </div>
+            <div class="quote">"${item.reason}"</div>
+          </div>
+
+          <div class="finger" style="background:${fingerBg}">
+            <span class="hand">🖐️</span>
+            <span class="txt">${fingerCount === 1 ? "1 Finger" : "2 Fingers"}</span>
+          </div>
+
+          <button class="nextbtn" id="btnNext">Next Item ⚡</button>
         </div>
+      `;
+    }
 
-        <button 
-          onClick={nextQuestion}
-          className="px-8 py-3 bg-slate-800 text-white font-bold rounded-xl shadow-lg hover:bg-slate-900 transition-colors flex items-center gap-2"
-        >
-          Next Item <Zap size={18} />
-        </button>
-      </div>
-    );
-  };
+    function EndScreen() {
+      const conductors = gameData.filter(i => i.type === "conductor");
+      const insulators = gameData.filter(i => i.type === "insulator");
 
-  const EndScreen = () => {
-    const conductors = gameData.filter(i => i.type === 'conductor');
-    const insulators = gameData.filter(i => i.type === 'insulator');
+      const renderChips = (arr) => arr.map(i => `
+        <div class="chip"><span style="font-size:16px">${i.emoji}</span> ${i.name}</div>
+      `).join("");
 
-    return (
-      <div className="flex flex-col h-full p-4 overflow-y-auto bg-slate-50">
-        <div className="text-center mb-6 pt-4">
-          <h1 className="text-3xl font-black text-slate-800 mb-2">Task 1 Complete!</h1>
-          <p className="text-slate-600">You scored {score} out of {gameData.length}</p>
-        </div>
+      return `
+        <div class="endwrap">
+          <div class="endhead">
+            <div class="h">Task 1 Complete!</div>
+            <div class="p">You scored ${state.score} out of ${gameData.length}</div>
+          </div>
 
-        {/* Grouping Display (Task 1 Goal) */}
-        <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto w-full mb-8">
-            {/* Conductors List */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-green-500">
-                <div className="flex items-center gap-2 mb-4">
-                    <Zap className="text-green-500" />
-                    <h3 className="text-xl font-bold text-slate-800">Conductors</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                    {conductors.map(item => (
-                        <div key={item.id} className="flex items-center gap-2 text-sm bg-green-50 p-2 rounded-lg text-slate-700">
-                            <span>{item.emoji}</span> {item.name}
-                        </div>
-                    ))}
-                </div>
-                <p className="mt-3 text-xs text-center text-slate-400 font-medium">Allow electricity to pass</p>
+          <div class="twoCols">
+            <div class="listcard greenTop">
+              <div class="listtitle">⚡ Conductors</div>
+              <div class="items">${renderChips(conductors)}</div>
+              <div class="footnote">Allow electricity to pass</div>
             </div>
 
-            {/* Insulators List */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-red-500">
-                <div className="flex items-center gap-2 mb-4">
-                    <Ban className="text-red-500" />
-                    <h3 className="text-xl font-bold text-slate-800">Insulators</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                    {insulators.map(item => (
-                        <div key={item.id} className="flex items-center gap-2 text-sm bg-red-50 p-2 rounded-lg text-slate-700">
-                            <span>{item.emoji}</span> {item.name}
-                        </div>
-                    ))}
-                </div>
-                <p className="mt-3 text-xs text-center text-slate-400 font-medium">Stop electricity</p>
+            <div class="listcard redTop">
+              <div class="listtitle">⛔ Insulators</div>
+              <div class="items">${renderChips(insulators)}</div>
+              <div class="footnote">Stop electricity</div>
             </div>
-        </div>
+          </div>
 
-        <div className="flex justify-center pb-8">
-            <button 
-                onClick={startGame}
-                className="px-6 py-3 bg-white border-2 border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-2"
-            >
-                <RotateCcw size={18} /> Play Again
-            </button>
+          <div class="again">
+            <button id="btnAgain">🔁 Play Again</button>
+          </div>
         </div>
-      </div>
-    );
-  };
+      `;
+    }
 
-  return (
-    <div className="w-full h-screen bg-slate-100 flex items-center justify-center font-sans">
-        <div className="w-full max-w-2xl h-full md:h-[800px] bg-white md:rounded-3xl shadow-2xl overflow-hidden relative">
-            {/* Decorative BG pattern */}
-            <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366f1 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-            
-            {gameState === 'start' && <StartScreen />}
-            {gameState === 'playing' && <PlayingScreen />}
-            {gameState === 'feedback' && <FeedbackScreen />}
-            {gameState === 'end' && <EndScreen />}
-        </div>
-    </div>
-  );
-}
+    // ---- Render + bind events ----
+    function render() {
+      if (state.gameState === "start") app.innerHTML = StartScreen();
+      if (state.gameState === "playing") app.innerHTML = PlayingScreen();
+      if (state.gameState === "feedback") app.innerHTML = FeedbackScreen();
+      if (state.gameState === "end") app.innerHTML = EndScreen();
+
+      // Bind events safely (elements may not exist on every screen)
+      const btnStart = document.getElementById("btnStart");
+      if (btnStart) btnStart.addEventListener("click", startGame);
+
+      const btnCon = document.getElementById("btnConductor");
+      if (btnCon) btnCon.addEventListener("click", () => handleAnswer("conductor"));
+
+      const btnIns = document.getElementById("btnInsulator");
+      if (btnIns) btnIns.addEventListener("click", () => handleAnswer("insulator"));
+
+      const btnNext = document.getElementById("btnNext");
+      if (btnNext) btnNext.addEventListener("click", nextQuestion);
+
+      const btnAgain = document.getElementById("btnAgain");
+      if (btnAgain) btnAgain.addEventListener("click", startGame);
+    }
+
+    // Boot
+    render();
+  </script>
+</body>
+</html>
